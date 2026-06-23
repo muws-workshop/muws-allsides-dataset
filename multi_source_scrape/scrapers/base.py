@@ -17,10 +17,11 @@ import hashlib
 import json
 import os
 import random
+import re
 import tempfile
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from curl_cffi import requests
 from bs4 import BeautifulSoup
@@ -35,6 +36,7 @@ PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 REPO_ROOT = os.path.dirname(PROJECT_DIR)
 DEFAULT_INPUT = os.path.join(REPO_ROOT, "allsides_crawl", "output", "allsides_jan2025_may2026_combined.jsonl")
 PER_DOMAIN_DIR = os.path.join(PROJECT_DIR, "output", "per_domain")
+IMAGES_DIR = os.path.join(PROJECT_DIR, "output", "images")
 
 CHROME_PROFILES = ["chrome", "chrome110", "chrome120"]
 REQUEST_TIMEOUT = 20
@@ -53,6 +55,58 @@ CLOUDFLARE_MARKERS = [
     "Checking your browser",
     "challenges.cloudflare.com",
 ]
+
+
+_MAX_FNAME_LEN = 120
+
+
+def _sanitize_filename(name):
+    name = re.sub(r'[^\w\-.]', '_', name)
+    return name[:_MAX_FNAME_LEN]
+
+
+def _filename_from_url(url, index):
+    path = unquote(urlparse(url).path)
+    basename = os.path.basename(path) or f"image_{index}"
+    basename = _sanitize_filename(basename)
+    if not re.search(r'\.(jpg|jpeg|png|gif|webp|svg|bmp|avif)$', basename, re.I):
+        basename += ".jpg"
+    return f"{index:03d}_{basename}"
+
+
+def download_article_images(session, result, story_id, slot,
+                            images_dir=None, output_base=None, debug=False):
+    """Download extracted images to disk, adding local_path to each entry."""
+    images = result.get("extracted_images")
+    if not images:
+        return
+    images_dir = images_dir or IMAGES_DIR
+    output_base = output_base or os.path.join(PROJECT_DIR, "output")
+    domain = result["domain"]
+    dest_dir = os.path.join(images_dir, domain, story_id, slot)
+
+    for i, img in enumerate(images):
+        url = img.get("url", "")
+        if not url or not url.startswith("http"):
+            continue
+        fname = _filename_from_url(url, i)
+        dest = os.path.join(dest_dir, fname)
+        rel_path = os.path.relpath(dest, output_base)
+        try:
+            os.makedirs(dest_dir, exist_ok=True)
+            resp = session.get(url, timeout=15)
+            ct = resp.headers.get("Content-Type", "")
+            if resp.status_code == 200 and (ct.startswith("image/") or "octet-stream" in ct):
+                if len(resp.content) >= 100:
+                    with open(dest, "wb") as f:
+                        f.write(resp.content)
+                    img["local_path"] = rel_path
+                    if debug:
+                        print(f"    [img {i}: {len(resp.content)} bytes]")
+                    continue
+        except Exception as e:
+            if debug:
+                print(f"    [img {i}: failed: {e}]")
 
 
 def derive_story_id(record):
@@ -102,19 +156,21 @@ def load_input_for_domain(input_path, target_domain):
     return work_items
 
 
-def load_domain_output(domain):
-    os.makedirs(PER_DOMAIN_DIR, exist_ok=True)
-    path = os.path.join(PER_DOMAIN_DIR, f"{domain}.json")
+def load_domain_output(domain, output_dir=None):
+    d = output_dir or PER_DOMAIN_DIR
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, f"{domain}.json")
     if os.path.exists(path):
         with open(path) as f:
             return json.load(f)
     return {}
 
 
-def save_domain_output(domain, data):
-    os.makedirs(PER_DOMAIN_DIR, exist_ok=True)
-    path = os.path.join(PER_DOMAIN_DIR, f"{domain}.json")
-    fd, tmp_path = tempfile.mkstemp(dir=PER_DOMAIN_DIR, suffix=".tmp")
+def save_domain_output(domain, data, output_dir=None):
+    d = output_dir or PER_DOMAIN_DIR
+    os.makedirs(d, exist_ok=True)
+    path = os.path.join(d, f"{domain}.json")
+    fd, tmp_path = tempfile.mkstemp(dir=d, suffix=".tmp")
     try:
         with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -335,7 +391,17 @@ def run_scraper(domain, parse_fn, extra_headers=None, body_filter=None):
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--input", default=DEFAULT_INPUT)
     parser.add_argument("--stance", choices=["left", "center", "right"])
+    parser.add_argument("--output-dir", help="Override output base directory")
     args = parser.parse_args()
+
+    if args.output_dir:
+        per_domain_dir = os.path.join(args.output_dir, "per_domain")
+        images_dir = os.path.join(args.output_dir, "images")
+        output_base = args.output_dir
+    else:
+        per_domain_dir = PER_DOMAIN_DIR
+        images_dir = IMAGES_DIR
+        output_base = os.path.join(PROJECT_DIR, "output")
 
     work_items = load_input_for_domain(args.input, domain)
     print(f"{domain}: {len(work_items)} total article slots in corpus")
@@ -344,7 +410,7 @@ def run_scraper(domain, parse_fn, extra_headers=None, body_filter=None):
         work_items = [w for w in work_items if w["slot"] == args.stance]
         print(f"  filtered to stance={args.stance}: {len(work_items)}")
 
-    output = load_domain_output(domain)
+    output = load_domain_output(domain, per_domain_dir)
 
     if args.mode == "audit":
         run_audit(domain, output, work_items)
@@ -400,6 +466,9 @@ def run_scraper(domain, parse_fn, extra_headers=None, body_filter=None):
         result = scrape_item(session, item, parse_fn,
                              extra_headers=extra_headers, debug=args.debug,
                              body_filter=body_filter)
+        download_article_images(session, result, item["story_id"], item["slot"],
+                                images_dir=images_dir, output_base=output_base,
+                                debug=args.debug)
         write_result(output, item["story_id"], item["slot"], result)
         session_count += 1
 
@@ -422,7 +491,7 @@ def run_scraper(domain, parse_fn, extra_headers=None, body_filter=None):
                 break
 
         if (i + 1) % FLUSH_INTERVAL == 0:
-            save_domain_output(domain, output)
+            save_domain_output(domain, output, per_domain_dir)
             if args.debug:
                 print("  [flushed]")
 
@@ -434,9 +503,9 @@ def run_scraper(domain, parse_fn, extra_headers=None, body_filter=None):
             else:
                 time.sleep(random.uniform(*DELAY_RANGE))
 
-    save_domain_output(domain, output)
+    save_domain_output(domain, output, per_domain_dir)
     print(f"\nDone. success={success}, failed={failed}")
-    out_path = os.path.join(PER_DOMAIN_DIR, f"{domain}.json")
+    out_path = os.path.join(per_domain_dir, f"{domain}.json")
     print(f"Output: {out_path}")
 
 

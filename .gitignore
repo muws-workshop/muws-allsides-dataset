@@ -8,6 +8,7 @@
 archive/
 data/
 */output/
+**/validate/
 PIPELINE_SPEC.md
 
 # Byte-compiled / optimized / DLL files
