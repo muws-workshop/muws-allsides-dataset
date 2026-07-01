@@ -81,28 +81,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown("""
-<style>
-[data-testid="stMetric"] {
-    background: #f0f2f6; border: 1px solid #d1d5db;
-    border-radius: 8px; padding: 12px 16px;
-}
-[data-testid="stMetric"] label {
-    color: #555 !important;
-}
-[data-testid="stMetric"] [data-testid="stMetricValue"] {
-    color: #1a1a2e !important;
-}
-[data-testid="stMetric"] [data-testid="stMetricDelta"] {
-    color: inherit !important;
-}
-.block-container { padding-top: 1.2rem; }
-div[data-testid="stExpander"] details {
-    border: 1px solid #e1e4e8; border-radius: 8px;
-}
-</style>
-""", unsafe_allow_html=True)
-
 # ── SIDEBAR — DATA LOADING ──────────────────────────────────────────────────
 with st.sidebar:
     st.title("📰 MUWS Dataset Explorer")
@@ -194,15 +172,30 @@ st.divider()
 
 # ── Metadata cards ───────────────────────────────────────────────────────────
 m1, m2, m3, m4 = st.columns(4)
-m1.metric("Domain", art["domain"])
-m2.metric("Rating", art.get("rating", "—"))
-m3.metric("Stance", art.get("stance_key", "—"))
-m4.metric("HTTP", art.get("http_status_code", "—"))
+with m1:
+    with st.container(border=True):
+        st.metric("Domain", art["domain"])
+with m2:
+    with st.container(border=True):
+        st.metric("Rating", art.get("rating", "—"))
+with m3:
+    with st.container(border=True):
+        st.metric("Stance", art.get("stance_key", "—"))
+with m4:
+    with st.container(border=True):
+        st.metric("HTTP", art.get("http_status_code", "—"))
 
-m6, m7 = st.columns(2)
-m6.metric("Text Length", f"{art.get('text_length', 0):,} chars" if pd.notna(art.get("text_length")) else "—")
-slug = str(art["topic_slug"])
-m7.metric("Topic", slug[:30] + "…" if len(slug) > 30 else slug)
+m6, m7 = st.columns([1, 3])
+with m6:
+    with st.container(border=True):
+        st.metric(
+            "Text Length",
+            f"{art.get('text_length', 0):,} chars" if pd.notna(art.get("text_length")) else "—"
+        )
+with m7:
+    with st.container(border=True):
+        slug = str(art["topic_slug"])
+        st.metric("Topic", slug)
 
 url = art.get("url", "")
 if url:
