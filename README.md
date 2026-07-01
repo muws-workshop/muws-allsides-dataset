@@ -23,7 +23,7 @@ To download and analyze the dataset, please perform the following steps.
 > - output/
 >   - full_articles/
 >   - images/
->   - allsides_jun2025_may2026_cleaned.jsonl
+>   - allsides_Jan2025_May2026_combined.jsonl
 
 ### 1. AllSides Crawl
 

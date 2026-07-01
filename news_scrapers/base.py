@@ -33,7 +33,7 @@ except ImportError:
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
-DEFAULT_INPUT = os.path.join(PROJECT_DIR, "output", "allsides_jun2025_may2026_cleaned.jsonl")
+DEFAULT_INPUT = os.path.join(PROJECT_DIR, "output", "allsides_Jan2025_May2026_combined.jsonl")
 PER_DOMAIN_DIR = os.path.join(PROJECT_DIR, "output", "full_articles")
 IMAGES_DIR = os.path.join(PROJECT_DIR, "output", "images")
 
