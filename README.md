@@ -21,7 +21,7 @@ To download and analyze the dataset, please perform the following steps.
 
 ### 1. AllSides Crawl
 
-Crawls headline roundups from https://allsides.com to produce a structured JSONL dataset of stories with from left/center/right including article links, bias ratings, and metadata.
+Crawls headline roundups from https://allsides.com to produce a structured JSONL dataset of stories with left, center, and right stance including article links, bias ratings, and metadata.
 
 ```bash
 python allsides_scraper.py
@@ -31,7 +31,7 @@ You can change parameters such as the time range directly in the [`allsides_scra
 
 ### 2. Scrape News Articles
 
-Scrapes the full article text behind the featured left/center/right links from the AllSides dataset obtained in the first step.
+Scrapes the full article text behind the featured left, center, an right stances from the AllSides dataset obtained in the first step.
 
 Each news domain `<domain>` has a dedicated scraper with custom HTML parsing that can be crawled as follows: 
 
