@@ -19,6 +19,12 @@ pip install -r requirements.txt
 
 To download and analyze the dataset, please perform the following steps.
 
+> Note: If you have downloaded the dataset by requesting access via this [form](https://forms.gle/tLJEZfJsnYhW5dYg8), please copy the dataset in the folder `output` as follows: 
+> - output/
+>   - full_articles/
+>   - images/
+>   - allsides_jun2025_may2026_cleaned.jsonl
+
 ### 1. AllSides Crawl
 
 Crawls headline roundups from https://allsides.com to produce a structured JSONL dataset of stories with left, center, and right stance including article links, bias ratings, and metadata.
