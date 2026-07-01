@@ -1,4 +1,4 @@
-*/crawls
+/output
 
 # Scraped data & output (nothing scraped goes to GitHub)
 *.jsonl
