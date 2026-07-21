@@ -1,5 +1,5 @@
 """
-Qbias Dataset Explorer — Streamlit App
+MUWS Dataset Explorer — Streamlit App
 =======================================
 Story-centric explorer for the AllSides balanced-news dataset + local crawl.
 
@@ -20,11 +20,12 @@ from streamlit_searchbox import st_searchbox
 
 # ── CONFIGURATION ────────────────────────────────────────────────────────────
 
+RATING_ORDER = ["left", "lean left", "center", "lean right", "right"]
+
+
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_DEFAULT_DATA_DIR = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", "output", "per_domain_clean"))
-_ALLSIDES_OUTPUT = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", "..", "allsides_crawl", "output"))
-# The repaired dataset (full summaries + local images).
-_DEFAULT_STORIES_PATH = os.path.join(_ALLSIDES_OUTPUT, "allsides_jan2025_may2026.jsonl")
+_DEFAULT_DATA_DIR = os.path.normpath(os.path.join(_SCRIPT_DIR, "output", "full_articles"))
+_DEFAULT_STORIES_PATH = os.path.join(_SCRIPT_DIR, "output", "allsides_Jan2025_May2026_combined.jsonl")
 
 STANCES = ["left", "center", "right"]
 STANCE_LABEL = {"left": "Left", "center": "Center", "right": "Right"}
@@ -159,7 +160,7 @@ def build_story_index(stories_path: str, data_dir: str) -> pd.DataFrame:
 # ── PAGE CONFIG & CSS ────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="Qbias Dataset Explorer",
+    page_title="MUWS Dataset Explorer",
     page_icon="📰",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -173,7 +174,7 @@ st.markdown("""
 }
 [data-testid="stMetric"] label { color: #555 !important; }
 [data-testid="stMetric"] [data-testid="stMetricValue"] { color: #1a1a2e !important; font-size: 1.5rem; }
-.block-container { padding-top: 1.2rem; }
+
 div[data-testid="stExpander"] details { border: 1px solid #e1e4e8; border-radius: 8px; }
 
 .stance-card {
@@ -216,7 +217,7 @@ def bias_chip(rating: str) -> str:
 # ── SIDEBAR — DATA SOURCES ───────────────────────────────────────────────────
 
 with st.sidebar:
-    st.title("📰 Qbias Explorer")
+    st.title("📰 MUWS Dataset Explorer")
     st.caption("Data sources")
     stories_path = st.text_input("AllSides stories (.jsonl)", value=_DEFAULT_STORIES_PATH)
     data_dir = st.text_input("Crawled articles directory", value=_DEFAULT_DATA_DIR)
@@ -280,9 +281,9 @@ if nav == PAGE_STATS:
     dmin, dmax = _dates.min(), _dates.max()
 
     st.markdown(f"""
-## The Qbias Dataset
+## The MUWS Dataset
 
-**Qbias** pairs [AllSides](https://www.allsides.com) *balanced news* stories with locally
+The **MUWS** dataset pairs [AllSides](https://www.allsides.com) *balanced news* stories with locally
 crawled full-text articles. Each AllSides story covers one news event through **three
 stances** — an article from a **Left**-, **Center**-, and **Right**-leaning outlet — selected
 and summarized by AllSides editors.
