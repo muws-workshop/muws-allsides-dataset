@@ -62,5 +62,5 @@ Parameters can be changed in the [`news_scrapers/base.py`](news_scrapers/base.py
 Browse articles, view locally downloaded images, and inspect extracted content. 
 
 ```bash
-streamlit run multi_source_scrape/ui_analysis/dataset_explorer.py
+streamlit run dataset_explorer/main.py
 ```
