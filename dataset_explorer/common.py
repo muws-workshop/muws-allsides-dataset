@@ -133,14 +133,16 @@ def build_story_index(stories_path: str, data_dir: str) -> pd.DataFrame:
     crawled, articles = load_crawled(data_dir)
 
     per_slug = articles.groupby("slug") if not articles.empty else None
-    n_crawled, has_img, domains = {}, {}, {}
+    n_crawled, has_img, domains, stances = {}, {}, {}, {}
     if per_slug is not None:
         for slug, grp in per_slug:
             n_crawled[slug] = len(grp)
             has_img[slug] = bool(grp["has_local_image"].any())
             domains[slug] = sorted(grp["domain"].unique())
+            stances[slug] = sorted(grp["stance_key"].unique())
 
     stories["n_crawled"] = stories["slug"].map(n_crawled).fillna(0).astype(int)
     stories["has_images"] = stories["slug"].map(has_img).fillna(False).astype(bool)
     stories["crawled_domains"] = stories["slug"].map(domains).apply(lambda v: v if isinstance(v, list) else [])
+    stories["crawled_stances"] = stories["slug"].map(stances).apply(lambda v: v if isinstance(v, list) else [])
     return stories

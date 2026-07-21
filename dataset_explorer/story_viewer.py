@@ -37,23 +37,31 @@ left_col, right_col = st.columns([1.3, 1], gap="large")
 with left_col:
     # ── FILTERS ────────────────────────────────────────────────────────────
     st.subheader("🔎 Filters")
-    filt_a, filt_b = st.columns(2, gap="medium")
-
-    with filt_a:
-        f_images = st.checkbox(
+    f_images = st.checkbox(
             "Only stories with crawled images 🖼️", key="flt_images",
             help="At least one crawled article has locally stored images (for multimodal work).",
         )
-        f_crawled = st.slider(
-            "Crawled stances (min / max)", 0, 3, key="flt_crawled",
-            help="How many of the story's Left/Center/Right articles were successfully crawled.",
+    filt_a, filt_b = st.columns(2, gap="medium")
+
+    with filt_a:
+        # f_crawled = st.slider(
+        #     "Crawled stances (min / max)", 0, 3, key="flt_crawled",
+        #     help="How many of the story's Left/Center/Right articles were successfully crawled.",
+        # )
+        f_stances = st.multiselect(
+            "Must include full article these stances",
+            options=STANCES,
+            key="flt_stances",
+            format_func=lambda s: STANCE_LABEL[s],
+            help="Only show stories where full articles of every stance selected here was successfully "
+                 "crawled — e.g. pick Left and Right to require both.",
         )
         all_domains = sorted(articles["domain"].unique()) if not articles.empty else []
         st.session_state["flt_domains"] = [
             d for d in st.session_state["flt_domains"] if d in all_domains
         ]
         f_domains = st.multiselect(
-            "News provider (up to 3)",
+            "Must include full articles of news provider (up to 3)",
             options=all_domains,
             max_selections=3,
             key="flt_domains",
@@ -99,9 +107,12 @@ with left_col:
         )
 
     # ── APPLY FILTERS ────────────────────────────────────────────────────────
-    mask = stories["n_crawled"].between(f_crawled[0], f_crawled[1])
+    mask = pd.Series(True, index=stories.index)
+    # mask &= stories["n_crawled"].between(f_crawled[0], f_crawled[1])
     if f_images:
         mask &= stories["has_images"]
+    if f_stances:
+        mask &= stories["crawled_stances"].apply(lambda ss: all(s in ss for s in f_stances))
     if f_domains:
         if f_domains_all:
             mask &= stories["crawled_domains"].apply(lambda ds: all(d in ds for d in f_domains))

@@ -140,6 +140,7 @@ st.session_state["bias_emoji"] = BIAS_EMOJI
 _FILTER_DEFAULTS = {
     "flt_crawled": (0, 3),
     "flt_images": False,
+    "flt_stances": [],
     "flt_domains": [],
     "flt_domains_all": False,
     "search_summaries": False,
