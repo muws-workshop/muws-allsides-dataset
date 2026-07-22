@@ -97,14 +97,20 @@ with left_col:
         fig.update_yaxes(visible=False)
         st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
-        # seed / clamp the stored range against the current data
-        _lo, _hi = st.session_state.get("flt_dates", (dmin, dmax))
-        st.session_state["flt_dates"] = (
-            min(max(_lo, dmin), dmax), min(max(_hi, dmin), dmax))
-        f_dates = st.slider(
-            "Date range", min_value=dmin, max_value=dmax, key="flt_dates",
-            format="YYYY-MM-DD", label_visibility="collapsed",
-        )
+        if dmin == dmax:
+            # st.slider requires min_value < max_value; a single-day dataset
+            # (or filter result) has nothing to slide, so just show the date.
+            st.caption(f"All stories are from {dmin}")
+            f_dates = (dmin, dmax)
+        else:
+            # seed / clamp the stored range against the current data
+            _lo, _hi = st.session_state.get("flt_dates", (dmin, dmax))
+            st.session_state["flt_dates"] = (
+                min(max(_lo, dmin), dmax), min(max(_hi, dmin), dmax))
+            f_dates = st.slider(
+                "Date range", min_value=dmin, max_value=dmax, key="flt_dates",
+                format="YYYY-MM-DD", label_visibility="collapsed",
+            )
 
     # ── APPLY FILTERS ────────────────────────────────────────────────────────
     mask = pd.Series(True, index=stories.index)
