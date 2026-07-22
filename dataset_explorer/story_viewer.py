@@ -171,11 +171,6 @@ with right_col:
         ))
         fig.update_layout(**PLOTLY_LAYOUT, height=430)
         fig.update_layout(margin=dict(l=0, r=0, t=10, b=0))
-        fig.add_annotation(
-            text=f"<b>{len(f_articles):,}</b><br>articles",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=18, color="#1a1a2e"),
-        )
         st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
 if filtered.empty:
