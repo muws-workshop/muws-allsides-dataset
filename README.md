@@ -30,10 +30,12 @@ To download and analyze the dataset, please perform the following steps.
 Crawls headline roundups from https://allsides.com to produce a structured JSONL dataset of stories with left, center, and right stance including article links, bias ratings, and metadata.
 
 ```bash
-python allsides_scraper.py
+python allsides_scraper.py --start 2025-01-01 --end 2026-12-31 --out-dir output
 ```
 
-You can change parameters such as the time range directly in the [`allsides_scraper.py`](allsides_scraper.py).
+`--start`/`--end` set the date range (YYYY-MM-DD); `--out-dir` sets the destination directory, which will contain `allsides_<start>_<end>.jsonl` (override with `--filename`) and an `images/` folder. Other parameters (`--workers`, `--delay`, `--max-pages`, `--limit`, `--no-more`, `--no-images`, `--filename`, `--fresh`) can be changed the same way — run `python allsides_scraper.py --help` for the full list.
+
+Built for large crawls (e.g. the full `2025-01-01`–`2026-12-31` range, ~1-2k stories): each story is written to the output file as soon as it's scraped, so a crash or Ctrl-C only loses stories still in flight. Re-running the same command afterward resumes automatically, skipping stories already in the output file — pass `--fresh` to force a full re-scrape instead.
 
 ### 2. Scrape News Articles
 
